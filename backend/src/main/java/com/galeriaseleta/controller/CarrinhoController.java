@@ -1,64 +1,57 @@
 package com.galeriaseleta.controller;
 
+import com.galeriaseleta.service.CarrinhoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * Gerencia o carrinho de compras do usuário autenticado.
- *
- * Futuramente: injetar CarrinhoService para delegar a lógica de negócio.
- * Futuramente: suportar carrinho temporário (Redis/sessão) para usuários não autenticados,
- *              com merge automático dos itens ao fazer login.
- * Futuramente: verificar disponibilidade de estoque ao adicionar ou atualizar itens.
- */
 @RestController
 @RequestMapping("/api/carrinho")
 public class CarrinhoController {
 
-    /**
-     * Retorna o carrinho atual do usuário com todos os itens e o total calculado.
-     */
+    private final CarrinhoService carrinhoService;
+
+    public CarrinhoController(CarrinhoService carrinhoService) {
+        this.carrinhoService = carrinhoService;
+    }
+
+    /** Retorna o carrinho do usuário autenticado com itens e total. O ID do usuário virá do contexto de autenticação. */
     @GetMapping
-    public ResponseEntity<Void> obterCarrinho() {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Object> obterCarrinho() {
+        return ResponseEntity.ok(carrinhoService.buscarOuCriar(0L));
     }
 
-    /**
-     * Adiciona um produto ao carrinho.
-     * Futuramente: se o produto (com mesmo tamanho/cor) já existir, incrementar a quantidade.
-     */
+    /** Adiciona um produto ao carrinho. Body: { produtoId, quantidade, tamanho?, cor? }. */
     @PostMapping("/itens")
-    public ResponseEntity<Void> adicionarItem(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<Object> adicionarItem(@RequestBody Map<String, Object> body) {
+        Long produtoId = ((Number) body.get("produtoId")).longValue();
+        Integer quantidade = (Integer) body.get("quantidade");
+        return ResponseEntity.status(HttpStatus.CREATED).body(carrinhoService.adicionarItem(0L, produtoId, quantidade));
     }
 
-    /**
-     * Atualiza a quantidade de um item já existente no carrinho.
-     * Futuramente: remover o item automaticamente se a quantidade for zero.
-     */
+    /** Atualiza a quantidade de um item do carrinho. Body: { quantidade }. */
     @PutMapping("/itens/{itemId}")
     public ResponseEntity<Void> atualizarItem(
             @PathVariable Long itemId,
             @RequestBody Map<String, Object> body) {
+        Integer quantidade = (Integer) body.get("quantidade");
+        carrinhoService.atualizarQuantidade(itemId, quantidade);
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Remove um item específico do carrinho.
-     */
+    /** Remove um item do carrinho pelo ID. */
     @DeleteMapping("/itens/{itemId}")
     public ResponseEntity<Void> removerItem(@PathVariable Long itemId) {
+        carrinhoService.removerItem(0L, itemId);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Esvazia completamente o carrinho do usuário.
-     */
+    /** Esvazia completamente o carrinho do usuário. */
     @DeleteMapping
     public ResponseEntity<Void> limparCarrinho() {
+        carrinhoService.limpar(0L);
         return ResponseEntity.noContent().build();
     }
 }

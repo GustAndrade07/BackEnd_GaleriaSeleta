@@ -1,72 +1,61 @@
 package com.galeriaseleta.controller;
 
+import com.galeriaseleta.service.CategoriaService;
+import com.galeriaseleta.service.ProdutoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * Gerencia as categorias de produtos da loja (ex: Moletons, Calças, Camisetas, Calçados).
- *
- * Futuramente: injetar CategoriaService para delegar a lógica de negócio.
- */
 @RestController
 @RequestMapping("/api/categorias")
 public class CategoriaController {
 
-    /**
-     * Lista todas as categorias cadastradas.
-     * Usado pelo frontend para popular o menu de filtros na tela de produtos.
-     */
+    private final CategoriaService categoriaService;
+    private final ProdutoService produtoService;
+
+    public CategoriaController(CategoriaService categoriaService, ProdutoService produtoService) {
+        this.categoriaService = categoriaService;
+        this.produtoService = produtoService;
+    }
+
+    /** Lista todas as categorias. */
     @GetMapping
-    public ResponseEntity<Void> listarCategorias() {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Object> listarCategorias() {
+        return ResponseEntity.ok(categoriaService.listarTodas());
     }
 
-    /**
-     * Retorna os detalhes de uma categoria específica.
-     */
+    /** Retorna os detalhes de uma categoria pelo ID. */
     @GetMapping("/{id}")
-    public ResponseEntity<Void> buscarCategoria(@PathVariable Long id) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Object> buscarCategoria(@PathVariable Long id) {
+        return ResponseEntity.ok(categoriaService.buscarPorId(id));
     }
 
-    /**
-     * Lista todos os produtos pertencentes a uma categoria específica.
-     */
+    /** Lista os produtos de uma categoria específica. */
     @GetMapping("/{id}/produtos")
-    public ResponseEntity<Void> listarProdutosPorCategoria(@PathVariable Long id) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Object> listarProdutosPorCategoria(@PathVariable Long id) {
+        return ResponseEntity.ok(produtoService.buscarPorCategoria(id));
     }
 
-    /**
-     * Cadastra uma nova categoria de produtos.
-     * Restrito a administradores.
-     */
+    /** Cadastra uma nova categoria. */
     @PostMapping
-    public ResponseEntity<Void> criarCategoria(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<Object> criarCategoria(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoriaService.salvar(body));
     }
 
-    /**
-     * Atualiza os dados de uma categoria existente.
-     * Restrito a administradores.
-     */
+    /** Atualiza os dados de uma categoria existente. */
     @PutMapping("/{id}")
-    public ResponseEntity<Void> atualizarCategoria(
+    public ResponseEntity<Object> atualizarCategoria(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(categoriaService.atualizar(id, body));
     }
 
-    /**
-     * Remove uma categoria do sistema.
-     * Futuramente: verificar se existem produtos vinculados antes de deletar.
-     * Restrito a administradores.
-     */
+    /** Remove uma categoria pelo ID. */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarCategoria(@PathVariable Long id) {
+        categoriaService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 }
