@@ -1,59 +1,80 @@
-# GaleriaSeleta
+# Galeria Seleta — Front-end
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.24.
+Aplicação web desenvolvida com **Angular 19** para a Galeria Seleta, um brechó online com curadoria de peças vintage e exclusivas. O projeto conta com renderização no servidor (SSR) via Angular SSR + Express.
 
-## Development server
+## Tecnologias
 
-To start a local development server, run:
+- Angular 19 (standalone components)
+- Angular SSR + Express
+- TypeScript 5.7
+- Karma + Jasmine (testes unitários)
 
-```bash
-ng serve
-```
+## Pré-requisitos
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Node.js 18+
+- Angular CLI 19
 
 ```bash
-ng generate component component-name
+npm install -g @angular/cli
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Instalação
 
 ```bash
-ng generate --help
+npm install
 ```
 
-## Building
-
-To build the project run:
+## Executando localmente
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Acesse `http://localhost:4200/`. A aplicação recarrega automaticamente ao salvar arquivos.
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Build de produção
 
 ```bash
-ng test
+npm run build
 ```
 
-## Running end-to-end tests
+Os artefatos gerados ficam em `dist/`. O build de produção já aplica otimizações de performance.
 
-For end-to-end (e2e) testing, run:
+## SSR (Server-Side Rendering)
 
 ```bash
-ng e2e
+npm run build
+node dist/galeria-seleta/server/server.mjs
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Testes
 
-## Additional Resources
+```bash
+npm test
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Estrutura de páginas
+
+| Rota | Componente | Descrição |
+|---|---|---|
+| `/` | `HomeComponent` | Hero com carrossel e vitrine de novidades |
+| `/produtos` | `ProdutosComponent` | Catálogo com filtro por categoria e ordenação |
+| `/login` | `LoginComponent` | Autenticação de usuário |
+| `/cadastro` | `CadastroComponent` | Criação de conta |
+| `/sobre` | `SobreComponent` | Sobre a Galeria Seleta |
+
+## Modelo de Produto
+
+```ts
+interface Produto {
+  id: number;
+  nome: string;
+  descricao: string;
+  preco: number;
+  preco_desconto: number | null;
+  imagem_url: string;
+  categoria: string;
+  status: 'ativo' | 'inativo';
+  criado_em: string;
+}
+```
