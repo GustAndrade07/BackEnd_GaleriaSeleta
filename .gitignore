@@ -43,3 +43,11 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Java / Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+
+# Banco de dados SQLite
+*.db

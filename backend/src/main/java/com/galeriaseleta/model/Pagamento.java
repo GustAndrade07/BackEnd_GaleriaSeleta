@@ -5,11 +5,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "pagamento")
+@Table(name = "pagamentos")
 public class Pagamento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "pagamento_id")
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -17,16 +18,25 @@ public class Pagamento {
     private Pedido pedido;
 
     @Column(nullable = false)
-    private String status = "PENDENTE";
+    private String metodo;
 
     @Column(nullable = false)
-    private String forma;
+    private Integer parcelas = 1;
+
+    @Column(nullable = false)
+    private String status;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
 
-    @Column(name = "criado_em")
-    private LocalDateTime criadoEm = LocalDateTime.now();
+    @Column(name = "codigo_pix")
+    private String codigoPix;
+
+    @Column(name = "codigo_transacao")
+    private String codigoTransacao;
+
+    @Column(name = "pago_em")
+    private LocalDateTime pagoEm;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -34,15 +44,24 @@ public class Pagamento {
     public Pedido getPedido() { return pedido; }
     public void setPedido(Pedido pedido) { this.pedido = pedido; }
 
+    public String getMetodo() { return metodo; }
+    public void setMetodo(String metodo) { this.metodo = metodo; }
+
+    public Integer getParcelas() { return parcelas; }
+    public void setParcelas(Integer parcelas) { this.parcelas = parcelas; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-
-    public String getForma() { return forma; }
-    public void setForma(String forma) { this.forma = forma; }
 
     public BigDecimal getValor() { return valor; }
     public void setValor(BigDecimal valor) { this.valor = valor; }
 
-    public LocalDateTime getCriadoEm() { return criadoEm; }
-    public void setCriadoEm(LocalDateTime criadoEm) { this.criadoEm = criadoEm; }
+    public String getCodigoPix() { return codigoPix; }
+    public void setCodigoPix(String codigoPix) { this.codigoPix = codigoPix; }
+
+    public String getCodigoTransacao() { return codigoTransacao; }
+    public void setCodigoTransacao(String codigoTransacao) { this.codigoTransacao = codigoTransacao; }
+
+    public LocalDateTime getPagoEm() { return pagoEm; }
+    public void setPagoEm(LocalDateTime pagoEm) { this.pagoEm = pagoEm; }
 }

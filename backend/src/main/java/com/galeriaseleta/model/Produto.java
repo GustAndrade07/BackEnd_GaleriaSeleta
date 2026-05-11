@@ -5,12 +5,17 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "produto")
+@Table(name = "produtos")
 public class Produto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "produto_id")
     private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private Categoria categoria;
 
     @Column(nullable = false)
     private String nome;
@@ -21,24 +26,20 @@ public class Produto {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal preco;
 
-    @Column(name = "preco_desconto", precision = 10, scale = 2)
-    private BigDecimal precoDesconto;
-
     @Column(nullable = false)
-    private String status = "ativo";
+    private String status = "disponivel";
 
     @Column(nullable = false)
     private Boolean novidade = false;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id")
-    private Categoria categoria;
 
     @Column(name = "criado_em")
     private LocalDateTime criadoEm = LocalDateTime.now();
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
+
+    public Categoria getCategoria() { return categoria; }
+    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
@@ -49,17 +50,11 @@ public class Produto {
     public BigDecimal getPreco() { return preco; }
     public void setPreco(BigDecimal preco) { this.preco = preco; }
 
-    public BigDecimal getPrecoDesconto() { return precoDesconto; }
-    public void setPrecoDesconto(BigDecimal precoDesconto) { this.precoDesconto = precoDesconto; }
-
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
     public Boolean getNovidade() { return novidade; }
     public void setNovidade(Boolean novidade) { this.novidade = novidade; }
-
-    public Categoria getCategoria() { return categoria; }
-    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
 
     public LocalDateTime getCriadoEm() { return criadoEm; }
     public void setCriadoEm(LocalDateTime criadoEm) { this.criadoEm = criadoEm; }

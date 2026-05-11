@@ -3,12 +3,17 @@ package com.galeriaseleta.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "categoria")
+@Table(name = "categorias")
 public class Categoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "categoria_id")
     private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_mae_id")
+    private Categoria categoriaMae;
 
     @Column(nullable = false)
     private String nome;
@@ -21,6 +26,9 @@ public class Categoria {
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
+
+    public Categoria getCategoriaMae() { return categoriaMae; }
+    public void setCategoriaMae(Categoria categoriaMae) { this.categoriaMae = categoriaMae; }
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }

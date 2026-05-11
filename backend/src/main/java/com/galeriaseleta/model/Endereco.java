@@ -3,11 +3,12 @@ package com.galeriaseleta.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "endereco")
+@Table(name = "enderecos")
 public class Endereco {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "endereco_id")
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -15,19 +16,15 @@ public class Endereco {
     private Usuario usuario;
 
     @Column(nullable = false)
-    private String logradouro;
-
-    private String numero;
-    private String complemento;
-    private String bairro;
+    private String rua;
 
     @Column(nullable = false)
     private String cidade;
 
-    @Column(nullable = false, length = 2)
+    @Column(nullable = false)
     private String estado;
 
-    @Column(nullable = false, length = 9)
+    @Column(nullable = false)
     private String cep;
 
     @Column(nullable = false)
@@ -39,17 +36,8 @@ public class Endereco {
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 
-    public String getLogradouro() { return logradouro; }
-    public void setLogradouro(String logradouro) { this.logradouro = logradouro; }
-
-    public String getNumero() { return numero; }
-    public void setNumero(String numero) { this.numero = numero; }
-
-    public String getComplemento() { return complemento; }
-    public void setComplemento(String complemento) { this.complemento = complemento; }
-
-    public String getBairro() { return bairro; }
-    public void setBairro(String bairro) { this.bairro = bairro; }
+    public String getRua() { return rua; }
+    public void setRua(String rua) { this.rua = rua; }
 
     public String getCidade() { return cidade; }
     public void setCidade(String cidade) { this.cidade = cidade; }

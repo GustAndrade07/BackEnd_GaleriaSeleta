@@ -1,80 +1,110 @@
-# Galeria Seleta — Front-end
+# Galeria Seleta
 
-Aplicação web desenvolvida com **Angular 19** para a Galeria Seleta, um brechó online com curadoria de peças vintage e exclusivas. O projeto conta com renderização no servidor (SSR) via Angular SSR + Express.
+Aplicação web full-stack para a **Galeria Seleta**, um brechó online com curadoria de peças vintage e exclusivas.
 
-## Tecnologias
+- **Frontend:** Angular 19 com SSR (Server-Side Rendering)
+- **Backend:** Java 17 + Spring Boot 3 + SQLite
 
-- Angular 19 (standalone components)
-- Angular SSR + Express
-- TypeScript 5.7
-- Karma + Jasmine (testes unitários)
+---
 
 ## Pré-requisitos
 
-- Node.js 18+
-- Angular CLI 19
+Antes de começar, instale:
+
+| Ferramenta | Versão mínima | Download |
+|---|---|---|
+| Node.js | 18+ | https://nodejs.org |
+| Java (JDK) | 17+ | https://adoptium.net |
+
+> O Maven (ferramenta de build do Java) **não precisa ser instalado** — o projeto baixa automaticamente na primeira execução.
+
+---
+
+## Como rodar o projeto
+
+### 1. Clone o repositório
 
 ```bash
-npm install -g @angular/cli
+git clone https://github.com/GustAndrade07/BackEnd_GaleriaSeleta.git
+cd BackEnd_GaleriaSeleta
 ```
 
-## Instalação
+### 2. Rode o backend (Spring Boot)
+
+Abra um terminal na pasta `backend/` e execute:
+
+```bash
+cd backend
+mvnw.cmd spring-boot:run
+```
+
+Na **primeira execução**, o script baixa o Maven automaticamente. Aguarde até aparecer:
+
+```
+Started GaleriaSelataApplication in X seconds
+```
+
+O banco de dados (`galeria_seleta.db`) é criado automaticamente nessa etapa.
+A API ficará disponível em `http://localhost:8080`.
+
+### 3. Rode o frontend (Angular)
+
+Abra **outro terminal** na raiz do projeto e execute:
 
 ```bash
 npm install
-```
-
-## Executando localmente
-
-```bash
 npm start
 ```
 
-Acesse `http://localhost:4200/`. A aplicação recarrega automaticamente ao salvar arquivos.
+Acesse `http://localhost:4200/` no navegador.
 
-## Build de produção
+---
 
-```bash
-npm run build
+## Estrutura do projeto
+
+```
+BackEnd_GaleriaSeleta/
+├── backend/                  # API REST em Spring Boot
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/         # Controllers, Services, Repositories, Models
+│   │       └── resources/
+│   │           ├── application.properties
+│   │           └── schema.sql   # Estrutura do banco de dados
+│   ├── mvnw.cmd              # Script para rodar o Maven no Windows
+│   └── pom.xml               # Dependências Java
+│
+├── src/                      # Aplicação Angular
+│   └── app/
+│       ├── core/             # Models e dados mock
+│       └── [componentes]/    # home, produtos, login, cadastro, etc.
+│
+├── package.json              # Dependências Node.js
+└── README.md
 ```
 
-Os artefatos gerados ficam em `dist/`. O build de produção já aplica otimizações de performance.
+---
 
-## SSR (Server-Side Rendering)
+## Páginas do frontend
 
-```bash
-npm run build
-node dist/galeria-seleta/server/server.mjs
-```
+| Rota | Descrição |
+|---|---|
+| `/` | Home com carrossel e vitrine de novidades |
+| `/produtos` | Catálogo com filtro por categoria e ordenação |
+| `/login` | Autenticação de usuário |
+| `/cadastro` | Criação de conta |
+| `/sobre` | Sobre a Galeria Seleta |
 
-## Testes
+## Endpoints da API
 
-```bash
-npm test
-```
-
-## Estrutura de páginas
-
-| Rota | Componente | Descrição |
+| Método | Rota | Descrição |
 |---|---|---|
-| `/` | `HomeComponent` | Hero com carrossel e vitrine de novidades |
-| `/produtos` | `ProdutosComponent` | Catálogo com filtro por categoria e ordenação |
-| `/login` | `LoginComponent` | Autenticação de usuário |
-| `/cadastro` | `CadastroComponent` | Criação de conta |
-| `/sobre` | `SobreComponent` | Sobre a Galeria Seleta |
+| GET | `/api/produtos` | Listar produtos |
+| GET | `/api/produtos/{id}` | Buscar produto por ID |
+| GET | `/api/categorias` | Listar categorias |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/register` | Cadastro |
+| GET | `/api/carrinho` | Ver carrinho |
+| POST | `/api/pedidos` | Criar pedido |
 
-## Modelo de Produto
-
-```ts
-interface Produto {
-  id: number;
-  nome: string;
-  descricao: string;
-  preco: number;
-  preco_desconto: number | null;
-  imagem_url: string;
-  categoria: string;
-  status: 'ativo' | 'inativo';
-  criado_em: string;
-}
-```
+> A documentação completa dos endpoints está nos arquivos de controller em `backend/src/main/java/com/galeriaseleta/controller/`.

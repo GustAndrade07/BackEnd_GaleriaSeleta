@@ -3,11 +3,12 @@ package com.galeriaseleta.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "foto_produto")
+@Table(name = "fotos_produto")
 public class FotoProduto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "foto_id")
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -20,6 +21,9 @@ public class FotoProduto {
     @Column(nullable = false)
     private Boolean principal = false;
 
+    @Column(nullable = false)
+    private Integer ordem = 0;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -31,4 +35,7 @@ public class FotoProduto {
 
     public Boolean getPrincipal() { return principal; }
     public void setPrincipal(Boolean principal) { this.principal = principal; }
+
+    public Integer getOrdem() { return ordem; }
+    public void setOrdem(Integer ordem) { this.ordem = ordem; }
 }
