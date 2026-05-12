@@ -35,7 +35,7 @@ Abra um terminal na pasta `backend/` e execute:
 
 ```bash
 cd backend
-mvnw.cmd spring-boot:run
+.\mvnw.cmd spring-boot:run
 ```
 
 Na **primeira execução**, o script baixa o Maven automaticamente. Aguarde até aparecer:
@@ -44,7 +44,7 @@ Na **primeira execução**, o script baixa o Maven automaticamente. Aguarde até
 Started GaleriaSelataApplication in X seconds
 ```
 
-O banco de dados (`galeria_seleta.db`) é criado automaticamente nessa etapa.
+O banco de dados (`galeria_seleta.db`) é criado automaticamente na raiz de `backend/`.
 A API ficará disponível em `http://localhost:8080`.
 
 ### 3. Rode o frontend (Angular)
@@ -64,47 +64,150 @@ Acesse `http://localhost:4200/` no navegador.
 
 ```
 BackEnd_GaleriaSeleta/
-├── backend/                  # API REST em Spring Boot
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/         # Controllers, Services, Repositories, Models
-│   │       └── resources/
-│   │           ├── application.properties
-│   │           └── schema.sql   # Estrutura do banco de dados
-│   ├── mvnw.cmd              # Script para rodar o Maven no Windows
-│   └── pom.xml               # Dependências Java
+├── backend/                        # API REST em Spring Boot
+│   ├── src/main/java/com/galeriaseleta/
+│   │   ├── config/                 # CORS e tratamento global de erros
+│   │   ├── controller/             # Endpoints REST
+│   │   ├── converter/              # Conversor LocalDateTime para SQLite
+│   │   ├── model/                  # Entidades JPA
+│   │   ├── repository/             # Repositórios Spring Data JPA
+│   │   └── service/                # Regras de negócio
+│   ├── src/main/resources/
+│   │   ├── application.properties  # Configuração do banco e servidor
+│   │   └── schema.sql              # Criação das tabelas do banco
+│   ├── mvnw.cmd                    # Maven Wrapper para Windows
+│   └── pom.xml                     # Dependências Java
 │
-├── src/                      # Aplicação Angular
+├── src/                            # Aplicação Angular
 │   └── app/
-│       ├── core/             # Models e dados mock
-│       └── [componentes]/    # home, produtos, login, cadastro, etc.
+│       ├── core/                   # Models e dados mock
+│       └── [componentes]/          # home, produtos, login, cadastro, etc.
 │
-├── package.json              # Dependências Node.js
+├── teste.http                      # Arquivo de testes da API (REST Client VSCode)
+├── package.json                    # Dependências Node.js
 └── README.md
 ```
 
 ---
 
-## Páginas do frontend
-
-| Rota | Descrição |
-|---|---|
-| `/` | Home com carrossel e vitrine de novidades |
-| `/produtos` | Catálogo com filtro por categoria e ordenação |
-| `/login` | Autenticação de usuário |
-| `/cadastro` | Criação de conta |
-| `/sobre` | Sobre a Galeria Seleta |
-
 ## Endpoints da API
 
+Base URL: `http://localhost:8080/api`
+
+### Autenticação
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/api/produtos` | Listar produtos |
-| GET | `/api/produtos/{id}` | Buscar produto por ID |
-| GET | `/api/categorias` | Listar categorias |
-| POST | `/api/auth/login` | Login |
-| POST | `/api/auth/register` | Cadastro |
-| GET | `/api/carrinho` | Ver carrinho |
-| POST | `/api/pedidos` | Criar pedido |
+| POST | `/auth/register` | Cadastrar usuário |
+| POST | `/auth/login` | Login |
+| POST | `/auth/logout` | Logout |
+| POST | `/auth/forgot-password` | Recuperação de senha |
 
-> A documentação completa dos endpoints está nos arquivos de controller em `backend/src/main/java/com/galeriaseleta/controller/`.
+### Usuário
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/usuarios/me` | Ver perfil |
+| PUT | `/usuarios/me` | Atualizar perfil |
+| PATCH | `/usuarios/me/senha` | Alterar senha |
+| DELETE | `/usuarios/me` | Deletar conta |
+| GET | `/usuarios/me/enderecos` | Listar endereços |
+| POST | `/usuarios/me/enderecos` | Adicionar endereço |
+| DELETE | `/usuarios/me/enderecos/{id}` | Remover endereço |
+
+### Produtos
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/produtos` | Listar produtos (filtros: `ordenacao`, `status`) |
+| GET | `/produtos/{id}` | Buscar por ID |
+| GET | `/produtos/novidades` | Listar novidades |
+| GET | `/produtos/busca?termo=` | Buscar por nome |
+| POST | `/produtos` | Criar produto |
+| PUT | `/produtos/{id}` | Atualizar produto |
+| PATCH | `/produtos/{id}/status` | Alterar status |
+| DELETE | `/produtos/{id}` | Deletar produto |
+
+### Categorias
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/categorias` | Listar categorias |
+| GET | `/categorias/{id}` | Buscar por ID |
+| GET | `/categorias/{id}/produtos` | Produtos de uma categoria |
+| POST | `/categorias` | Criar categoria |
+| PUT | `/categorias/{id}` | Atualizar categoria |
+| DELETE | `/categorias/{id}` | Deletar categoria |
+
+### Carrinho
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/carrinho` | Ver carrinho |
+| POST | `/carrinho/itens` | Adicionar item |
+| PUT | `/carrinho/itens/{id}` | Atualizar quantidade |
+| DELETE | `/carrinho/itens/{id}` | Remover item |
+| DELETE | `/carrinho` | Limpar carrinho |
+
+### Pedidos
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/pedidos` | Listar pedidos (filtro: `status`) |
+| GET | `/pedidos/{id}` | Buscar por ID |
+| POST | `/pedidos` | Criar pedido (checkout) |
+| PATCH | `/pedidos/{id}/cancelar` | Cancelar pedido |
+| PATCH | `/pedidos/{id}/status` | Atualizar status (admin) |
+
+### Contato e Newsletter
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/contato` | Enviar mensagem de contato |
+| POST | `/newsletter/inscrever` | Inscrever e-mail |
+| DELETE | `/newsletter/cancelar?email=` | Cancelar inscrição |
+
+---
+
+## Tratamento de erros
+
+A API retorna respostas HTTP adequadas para cada situação:
+
+| Código | Situação |
+|---|---|
+| `200` / `201` / `204` | Sucesso |
+| `400` | Dados inválidos |
+| `401` | Credenciais incorretas |
+| `404` | Recurso não encontrado |
+| `409` | Conflito (ex: e-mail já cadastrado) |
+| `500` | Erro interno |
+
+---
+
+## Banco de dados
+
+O banco SQLite é criado automaticamente em `backend/galeria_seleta.db` na primeira execução. As tabelas são definidas em `backend/src/main/resources/schema.sql`.
+
+| Tabela | Descrição |
+|---|---|
+| `usuarios` | Contas de usuário |
+| `categorias` | Categorias de produtos (suporta hierarquia) |
+| `produtos` | Catálogo de peças |
+| `fotos_produto` | Imagens dos produtos |
+| `carrinho` | Itens no carrinho por usuário |
+| `pedidos` | Pedidos realizados |
+| `itens_pedido` | Produtos de cada pedido |
+| `enderecos` | Endereços de entrega por usuário |
+| `cupons` | Cupons de desconto |
+| `opcoes_frete` | Opções de envio |
+| `pagamentos` | Dados de pagamento |
+| `contatos` | Mensagens do formulário de contato |
+| `newsletter` | Inscrições de e-mail |
+
+---
+
+## Testando a API
+
+O arquivo [`teste.http`](teste.http) contém 56 requisições cobrindo todos os endpoints. Para usar, instale a extensão **REST Client** no VSCode (Huachao Mao) e clique em **Send Request** acima de cada requisição.
+
+---
+
+## Pendente
+
+- Autenticação JWT
+- Integração frontend ↔ API
+- Painel administrativo
+- Processamento de pagamento
