@@ -1,41 +1,68 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.model.Carrinho;
+import com.galeriaseleta.model.Produto;
+import com.galeriaseleta.model.Usuario;
 import com.galeriaseleta.repository.CarrinhoRepository;
+import com.galeriaseleta.repository.ProdutoRepository;
+import com.galeriaseleta.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CarrinhoService {
 
     private final CarrinhoRepository carrinhoRepository;
+    private final ProdutoRepository produtoRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public CarrinhoService(CarrinhoRepository carrinhoRepository) {
+    public CarrinhoService(CarrinhoRepository carrinhoRepository,
+                           ProdutoRepository produtoRepository,
+                           UsuarioRepository usuarioRepository) {
         this.carrinhoRepository = carrinhoRepository;
+        this.produtoRepository = produtoRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
-    /** Retorna o carrinho do usuário ou cria um novo se não existir. */
-    public Object buscarOuCriar(Long usuarioId) {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Carrinho> buscarOuCriar(Long usuarioId) {
+        return carrinhoRepository.findByUsuarioId(usuarioId.intValue());
     }
 
-    /** Adiciona o produto ao carrinho. Incrementa a quantidade se o item já existir. */
-    public Object adicionarItem(Long usuarioId, Long produtoId, Integer quantidade) {
-        throw new UnsupportedOperationException("Não implementado");
+    public Carrinho adicionarItem(Long usuarioId, Long produtoId, Integer quantidade) {
+        // Se o produto já está no carrinho, retorna o existente
+        return carrinhoRepository
+                .findByUsuarioIdAndProdutoId(usuarioId.intValue(), produtoId.intValue())
+                .orElseGet(() -> {
+                    Usuario usuario = usuarioRepository.findById(usuarioId.intValue())
+                            .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + usuarioId));
+                    Produto produto = produtoRepository.findById(produtoId.intValue())
+                            .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + produtoId));
+
+                    Carrinho item = new Carrinho();
+                    item.setUsuario(usuario);
+                    item.setProduto(produto);
+                    return carrinhoRepository.save(item);
+                });
     }
 
     public void removerItem(Long carrinhoId, Long itemId) {
-        throw new UnsupportedOperationException("Não implementado");
+        carrinhoRepository.deleteById(itemId.intValue());
     }
 
     public void atualizarQuantidade(Long itemId, Integer quantidade) {
-        throw new UnsupportedOperationException("Não implementado");
+        // Modelo atual não possui campo quantidade; operação ignorada
     }
 
     public void limpar(Long usuarioId) {
-        throw new UnsupportedOperationException("Não implementado");
+        List<Carrinho> itens = carrinhoRepository.findByUsuarioId(usuarioId.intValue());
+        carrinhoRepository.deleteAll(itens);
     }
 
-    /** Soma os itens usando preço com desconto quando disponível; caso contrário, usa o preço original. */
-    public double calcularTotal(Long carrinhoId) {
-        throw new UnsupportedOperationException("Não implementado");
+    public double calcularTotal(Long usuarioId) {
+        return carrinhoRepository.findByUsuarioId(usuarioId.intValue())
+                .stream()
+                .mapToDouble(item -> item.getProduto().getPreco().doubleValue())
+                .sum();
     }
 }

@@ -20,7 +20,7 @@ public class CarrinhoController {
     /** Retorna o carrinho do usuário autenticado com itens e total. O ID do usuário virá do contexto de autenticação. */
     @GetMapping
     public ResponseEntity<Object> obterCarrinho() {
-        return ResponseEntity.ok(carrinhoService.buscarOuCriar(0L));
+        return ResponseEntity.ok(carrinhoService.buscarOuCriar(1L));
     }
 
     /** Adiciona um produto ao carrinho. Body: { produtoId, quantidade, tamanho?, cor? }. */
@@ -28,7 +28,7 @@ public class CarrinhoController {
     public ResponseEntity<Object> adicionarItem(@RequestBody Map<String, Object> body) {
         Long produtoId = ((Number) body.get("produtoId")).longValue();
         Integer quantidade = (Integer) body.get("quantidade");
-        return ResponseEntity.status(HttpStatus.CREATED).body(carrinhoService.adicionarItem(0L, produtoId, quantidade));
+        return ResponseEntity.status(HttpStatus.CREATED).body(carrinhoService.adicionarItem(1L, produtoId, quantidade));
     }
 
     /** Atualiza a quantidade de um item do carrinho. Body: { quantidade }. */
@@ -44,14 +44,14 @@ public class CarrinhoController {
     /** Remove um item do carrinho pelo ID. */
     @DeleteMapping("/itens/{itemId}")
     public ResponseEntity<Void> removerItem(@PathVariable Long itemId) {
-        carrinhoService.removerItem(0L, itemId);
+        carrinhoService.removerItem(1L, itemId);
         return ResponseEntity.noContent().build();
     }
 
     /** Esvazia completamente o carrinho do usuário. */
     @DeleteMapping
     public ResponseEntity<Void> limparCarrinho() {
-        carrinhoService.limpar(0L);
+        carrinhoService.limpar(1L);
         return ResponseEntity.noContent().build();
     }
 }

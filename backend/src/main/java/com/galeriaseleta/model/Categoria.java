@@ -1,7 +1,10 @@
 package com.galeriaseleta.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "categorias")
 public class Categoria {
@@ -11,6 +14,7 @@ public class Categoria {
     @Column(name = "categoria_id")
     private Integer id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_mae_id")
     private Categoria categoriaMae;

@@ -102,3 +102,20 @@ CREATE TABLE IF NOT EXISTS pagamentos (
   codigo_transacao  TEXT,
   pago_em           TEXT
 );
+
+CREATE TABLE IF NOT EXISTS contatos (
+  contato_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome         TEXT NOT NULL,
+  sobrenome    TEXT,
+  email        TEXT NOT NULL,
+  telefone     TEXT,
+  mensagem     TEXT NOT NULL,
+  recebido_em  TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS newsletter (
+  newsletter_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email         TEXT NOT NULL UNIQUE,
+  ativo         INTEGER DEFAULT 1,
+  inscrito_em   TEXT DEFAULT (datetime('now'))
+);

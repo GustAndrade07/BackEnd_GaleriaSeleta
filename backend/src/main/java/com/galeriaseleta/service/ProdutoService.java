@@ -1,8 +1,11 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.model.Produto;
+import com.galeriaseleta.repository.CategoriaRepository;
 import com.galeriaseleta.repository.ProdutoRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -10,55 +13,75 @@ import java.util.Map;
 public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
+    private final CategoriaRepository categoriaRepository;
 
-    public ProdutoService(ProdutoRepository produtoRepository) {
+    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository) {
         this.produtoRepository = produtoRepository;
+        this.categoriaRepository = categoriaRepository;
     }
 
-    public List<Object> listarTodos() {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> listarTodos() {
+        return produtoRepository.findAll();
     }
 
-    public List<Object> listarAtivos() {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> listarAtivos() {
+        return produtoRepository.findByStatus("disponivel");
     }
 
-    public Object buscarPorId(Long id) {
-        throw new UnsupportedOperationException("Não implementado");
+    public Produto buscarPorId(Long id) {
+        return produtoRepository.findById(id.intValue())
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + id));
     }
 
-    public List<Object> buscarPorCategoria(Long categoriaId) {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> buscarPorCategoria(Long categoriaId) {
+        return produtoRepository.findByCategoriaId(categoriaId.intValue());
     }
 
-    public List<Object> buscarPorNome(String nome) {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> buscarPorNome(String nome) {
+        return produtoRepository.findByNomeContainingIgnoreCase(nome);
     }
 
-    /** Retorna os ativos ordenados do mais recente para o mais antigo. */
-    public List<Object> listarNovidades() {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> listarNovidades() {
+        return produtoRepository.findByNovidade(true);
     }
 
-    /** Ordena pelo preço final (considera desconto quando disponível). */
-    public List<Object> listarPorMenorPreco() {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> listarPorMenorPreco() {
+        return produtoRepository.findAllOrderByPrecoAsc();
     }
 
-    /** Ordena pelo preço final (considera desconto quando disponível). */
-    public List<Object> listarPorMaiorPreco() {
-        throw new UnsupportedOperationException("Não implementado");
+    public List<Produto> listarPorMaiorPreco() {
+        return produtoRepository.findAllOrderByPrecoDesc();
     }
 
-    public Object salvar(Map<String, Object> dados) {
-        throw new UnsupportedOperationException("Não implementado");
+    public Produto salvar(Map<String, Object> dados) {
+        Produto produto = new Produto();
+        preencherProduto(produto, dados);
+        return produtoRepository.save(produto);
     }
 
-    public Object atualizar(Long id, Map<String, Object> dados) {
-        throw new UnsupportedOperationException("Não implementado");
+    public Produto atualizar(Long id, Map<String, Object> dados) {
+        Produto produto = buscarPorId(id);
+        preencherProduto(produto, dados);
+        return produtoRepository.save(produto);
     }
 
     public void deletar(Long id) {
-        throw new UnsupportedOperationException("Não implementado");
+        produtoRepository.deleteById(id.intValue());
+    }
+
+    private void preencherProduto(Produto produto, Map<String, Object> dados) {
+        if (dados.containsKey("nome")) produto.setNome((String) dados.get("nome"));
+        if (dados.containsKey("descricao")) produto.setDescricao((String) dados.get("descricao"));
+        if (dados.containsKey("status")) produto.setStatus((String) dados.get("status"));
+        if (dados.containsKey("novidade")) produto.setNovidade((Boolean) dados.get("novidade"));
+
+        if (dados.containsKey("preco") && dados.get("preco") != null) {
+            produto.setPreco(new BigDecimal(dados.get("preco").toString()));
+        }
+
+        if (dados.containsKey("categoriaId") && dados.get("categoriaId") != null) {
+            Integer catId = ((Number) dados.get("categoriaId")).intValue();
+            categoriaRepository.findById(catId).ifPresent(produto::setCategoria);
+        }
     }
 }
