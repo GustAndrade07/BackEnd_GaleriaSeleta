@@ -1,11 +1,13 @@
 package com.galeriaseleta.controller;
 
+import com.galeriaseleta.dto.request.AdicionarCarrinhoRequest;
+import com.galeriaseleta.dto.request.AtualizarCarrinhoRequest;
+import com.galeriaseleta.dto.response.CarrinhoItemResponse;
+import com.galeriaseleta.dto.response.CarrinhoResponse;
 import com.galeriaseleta.service.CarrinhoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/carrinho")
@@ -19,25 +21,23 @@ public class CarrinhoController {
 
     /** Retorna o carrinho do usuário autenticado com itens e total. O ID do usuário virá do contexto de autenticação. */
     @GetMapping
-    public ResponseEntity<Object> obterCarrinho() {
-        return ResponseEntity.ok(carrinhoService.buscarOuCriar(1L));
+    public ResponseEntity<CarrinhoResponse> obterCarrinho() {
+        return ResponseEntity.ok(carrinhoService.obterCarrinho(1L));
     }
 
-    /** Adiciona um produto ao carrinho. Body: { produtoId, quantidade, tamanho?, cor? }. */
+    /** Adiciona um produto ao carrinho. Body: { produtoId, quantidade }. */
     @PostMapping("/itens")
-    public ResponseEntity<Object> adicionarItem(@RequestBody Map<String, Object> body) {
-        Long produtoId = ((Number) body.get("produtoId")).longValue();
-        Integer quantidade = (Integer) body.get("quantidade");
-        return ResponseEntity.status(HttpStatus.CREATED).body(carrinhoService.adicionarItem(1L, produtoId, quantidade));
+    public ResponseEntity<CarrinhoItemResponse> adicionarItem(@RequestBody AdicionarCarrinhoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(carrinhoService.adicionarItem(1L, request));
     }
 
     /** Atualiza a quantidade de um item do carrinho. Body: { quantidade }. */
     @PutMapping("/itens/{itemId}")
     public ResponseEntity<Void> atualizarItem(
             @PathVariable Long itemId,
-            @RequestBody Map<String, Object> body) {
-        Integer quantidade = (Integer) body.get("quantidade");
-        carrinhoService.atualizarQuantidade(itemId, quantidade);
+            @RequestBody AtualizarCarrinhoRequest request) {
+        carrinhoService.atualizarQuantidade(itemId, request);
         return ResponseEntity.ok().build();
     }
 

@@ -1,13 +1,12 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.dto.request.ProdutoRequest;
 import com.galeriaseleta.model.Produto;
 import com.galeriaseleta.repository.CategoriaRepository;
 import com.galeriaseleta.repository.ProdutoRepository;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ProdutoService {
@@ -53,15 +52,15 @@ public class ProdutoService {
         return produtoRepository.findAllOrderByPrecoDesc();
     }
 
-    public Produto salvar(Map<String, Object> dados) {
+    public Produto salvar(ProdutoRequest request) {
         Produto produto = new Produto();
-        preencherProduto(produto, dados);
+        preencherProduto(produto, request);
         return produtoRepository.save(produto);
     }
 
-    public Produto atualizar(Long id, Map<String, Object> dados) {
+    public Produto atualizar(Long id, ProdutoRequest request) {
         Produto produto = buscarPorId(id);
-        preencherProduto(produto, dados);
+        preencherProduto(produto, request);
         return produtoRepository.save(produto);
     }
 
@@ -69,19 +68,16 @@ public class ProdutoService {
         produtoRepository.deleteById(id.intValue());
     }
 
-    private void preencherProduto(Produto produto, Map<String, Object> dados) {
-        if (dados.containsKey("nome")) produto.setNome((String) dados.get("nome"));
-        if (dados.containsKey("descricao")) produto.setDescricao((String) dados.get("descricao"));
-        if (dados.containsKey("status")) produto.setStatus((String) dados.get("status"));
-        if (dados.containsKey("novidade")) produto.setNovidade((Boolean) dados.get("novidade"));
+    private void preencherProduto(Produto produto, ProdutoRequest request) {
+        if (request.getNome() != null) produto.setNome(request.getNome());
+        if (request.getDescricao() != null) produto.setDescricao(request.getDescricao());
+        if (request.getStatus() != null) produto.setStatus(request.getStatus());
+        if (request.getNovidade() != null) produto.setNovidade(request.getNovidade());
+        if (request.getPreco() != null) produto.setPreco(request.getPreco());
 
-        if (dados.containsKey("preco") && dados.get("preco") != null) {
-            produto.setPreco(new BigDecimal(dados.get("preco").toString()));
-        }
-
-        if (dados.containsKey("categoriaId") && dados.get("categoriaId") != null) {
-            Integer catId = ((Number) dados.get("categoriaId")).intValue();
-            categoriaRepository.findById(catId).ifPresent(produto::setCategoria);
+        if (request.getCategoriaId() != null) {
+            categoriaRepository.findById(request.getCategoriaId())
+                    .ifPresent(produto::setCategoria);
         }
     }
 }

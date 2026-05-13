@@ -1,12 +1,16 @@
 package com.galeriaseleta.controller;
 
+import com.galeriaseleta.dto.request.AlterarSenhaRequest;
+import com.galeriaseleta.dto.request.AtualizarPerfilRequest;
+import com.galeriaseleta.dto.request.EnderecoRequest;
+import com.galeriaseleta.dto.response.EnderecoResponse;
+import com.galeriaseleta.dto.response.UsuarioResponse;
 import com.galeriaseleta.service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -20,20 +24,20 @@ public class UsuarioController {
 
     /** Retorna o perfil do usuário autenticado. O ID será extraído do contexto de autenticação. */
     @GetMapping("/me")
-    public ResponseEntity<Object> obterPerfil() {
-        return ResponseEntity.ok(usuarioService.buscarPorId(1L));
+    public ResponseEntity<UsuarioResponse> obterPerfil() {
+        return ResponseEntity.ok(UsuarioResponse.from(usuarioService.buscarPorId(1L)));
     }
 
-    /** Atualiza nome, sobrenome, e-mail e telefone do usuário autenticado. */
+    /** Atualiza nome e telefone do usuário autenticado. */
     @PutMapping("/me")
-    public ResponseEntity<Object> atualizarPerfil(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.ok(usuarioService.atualizar(1L, body));
+    public ResponseEntity<UsuarioResponse> atualizarPerfil(@RequestBody AtualizarPerfilRequest request) {
+        return ResponseEntity.ok(UsuarioResponse.from(usuarioService.atualizar(1L, request)));
     }
 
-    /** Altera a senha do usuário autenticado. Body: { senhaAtual, novaSenha }. */
+    /** Altera a senha do usuário autenticado. */
     @PatchMapping("/me/senha")
-    public ResponseEntity<Void> alterarSenha(@RequestBody Map<String, String> body) {
-        usuarioService.atualizar(1L, new HashMap<>(body));
+    public ResponseEntity<Void> alterarSenha(@RequestBody AlterarSenhaRequest request) {
+        usuarioService.alterarSenha(1L, request);
         return ResponseEntity.ok().build();
     }
 
@@ -46,14 +50,18 @@ public class UsuarioController {
 
     /** Lista os endereços de entrega do usuário autenticado. */
     @GetMapping("/me/enderecos")
-    public ResponseEntity<Object> listarEnderecos() {
-        return ResponseEntity.ok(usuarioService.listarEnderecos(1L));
+    public ResponseEntity<List<EnderecoResponse>> listarEnderecos() {
+        List<EnderecoResponse> enderecos = usuarioService.listarEnderecos(1L).stream()
+                .map(EnderecoResponse::from)
+                .toList();
+        return ResponseEntity.ok(enderecos);
     }
 
     /** Adiciona um endereço de entrega ao perfil do usuário. */
     @PostMapping("/me/enderecos")
-    public ResponseEntity<Object> adicionarEndereco(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.adicionarEndereco(1L, body));
+    public ResponseEntity<EnderecoResponse> adicionarEndereco(@RequestBody EnderecoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(EnderecoResponse.from(usuarioService.adicionarEndereco(1L, request)));
     }
 
     /** Remove um endereço de entrega do perfil do usuário. */

@@ -1,12 +1,11 @@
 package com.galeriaseleta.service;
 
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.stereotype.Service;
-
+import com.galeriaseleta.dto.request.CategoriaRequest;
 import com.galeriaseleta.model.Categoria;
 import com.galeriaseleta.repository.CategoriaRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CategoriaService {
@@ -26,37 +25,35 @@ public class CategoriaService {
                 .orElseThrow(() -> new RuntimeException("Categoria não encontrada: " + id));
     }
 
-    public Categoria salvar(Map<String, Object> dados) {
+    public Categoria salvar(CategoriaRequest request) {
         Categoria categoria = new Categoria();
-        categoria.setNome((String) dados.get("nome"));
-        categoria.setNomeUrl((String) dados.get("nomeUrl"));
+        categoria.setNome(request.getNome());
+        categoria.setNomeUrl(request.getNomeUrl());
 
-        if (dados.containsKey("categoriaMaeId") && dados.get("categoriaMaeId") != null) {
-            Integer maeId = ((Number) dados.get("categoriaMaeId")).intValue();
-            categoriaRepository.findById(maeId).ifPresent(categoria::setCategoriaMae);
+        if (request.getCategoriaMaeId() != null) {
+            categoriaRepository.findById(request.getCategoriaMaeId())
+                    .ifPresent(categoria::setCategoriaMae);
         }
 
-        if (dados.containsKey("ativo")) {
-            categoria.setAtivo((Boolean) dados.get("ativo"));
+        if (request.getAtivo() != null) {
+            categoria.setAtivo(request.getAtivo());
         }
 
         return categoriaRepository.save(categoria);
     }
 
-    public Categoria atualizar(Long id, Map<String, Object> dados) {
+    public Categoria atualizar(Long id, CategoriaRequest request) {
         Categoria categoria = buscarPorId(id);
 
-        if (dados.containsKey("nome")) categoria.setNome((String) dados.get("nome"));
-        if (dados.containsKey("nomeUrl")) categoria.setNomeUrl((String) dados.get("nomeUrl"));
-        if (dados.containsKey("ativo")) categoria.setAtivo((Boolean) dados.get("ativo"));
+        if (request.getNome() != null) categoria.setNome(request.getNome());
+        if (request.getNomeUrl() != null) categoria.setNomeUrl(request.getNomeUrl());
+        if (request.getAtivo() != null) categoria.setAtivo(request.getAtivo());
 
-        if (dados.containsKey("categoriaMaeId")) {
-            if (dados.get("categoriaMaeId") == null) {
-                categoria.setCategoriaMae(null);
-            } else {
-                Integer maeId = ((Number) dados.get("categoriaMaeId")).intValue();
-                categoriaRepository.findById(maeId).ifPresent(categoria::setCategoriaMae);
-            }
+        if (request.getCategoriaMaeId() == null) {
+            categoria.setCategoriaMae(null);
+        } else {
+            categoriaRepository.findById(request.getCategoriaMaeId())
+                    .ifPresent(categoria::setCategoriaMae);
         }
 
         return categoriaRepository.save(categoria);

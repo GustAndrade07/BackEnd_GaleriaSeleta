@@ -1,5 +1,9 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.dto.request.AdicionarCarrinhoRequest;
+import com.galeriaseleta.dto.request.AtualizarCarrinhoRequest;
+import com.galeriaseleta.dto.response.CarrinhoItemResponse;
+import com.galeriaseleta.dto.response.CarrinhoResponse;
 import com.galeriaseleta.model.Carrinho;
 import com.galeriaseleta.model.Produto;
 import com.galeriaseleta.model.Usuario;
@@ -25,44 +29,38 @@ public class CarrinhoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public List<Carrinho> buscarOuCriar(Long usuarioId) {
-        return carrinhoRepository.findByUsuarioId(usuarioId.intValue());
+    public CarrinhoResponse obterCarrinho(Long usuarioId) {
+        List<Carrinho> itens = carrinhoRepository.findByUsuarioId(usuarioId.intValue());
+        return CarrinhoResponse.from(itens);
     }
 
-    public Carrinho adicionarItem(Long usuarioId, Long produtoId, Integer quantidade) {
-        // Se o produto já está no carrinho, retorna o existente
-        return carrinhoRepository
-                .findByUsuarioIdAndProdutoId(usuarioId.intValue(), produtoId.intValue())
+    public CarrinhoItemResponse adicionarItem(Long usuarioId, AdicionarCarrinhoRequest request) {
+        Carrinho item = carrinhoRepository
+                .findByUsuarioIdAndProdutoId(usuarioId.intValue(), request.getProdutoId().intValue())
                 .orElseGet(() -> {
                     Usuario usuario = usuarioRepository.findById(usuarioId.intValue())
                             .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + usuarioId));
-                    Produto produto = produtoRepository.findById(produtoId.intValue())
-                            .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + produtoId));
+                    Produto produto = produtoRepository.findById(request.getProdutoId().intValue())
+                            .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + request.getProdutoId()));
 
-                    Carrinho item = new Carrinho();
-                    item.setUsuario(usuario);
-                    item.setProduto(produto);
-                    return carrinhoRepository.save(item);
+                    Carrinho novoItem = new Carrinho();
+                    novoItem.setUsuario(usuario);
+                    novoItem.setProduto(produto);
+                    return carrinhoRepository.save(novoItem);
                 });
+        return CarrinhoItemResponse.from(item);
     }
 
     public void removerItem(Long carrinhoId, Long itemId) {
         carrinhoRepository.deleteById(itemId.intValue());
     }
 
-    public void atualizarQuantidade(Long itemId, Integer quantidade) {
+    public void atualizarQuantidade(Long itemId, AtualizarCarrinhoRequest request) {
         // Modelo atual não possui campo quantidade; operação ignorada
     }
 
     public void limpar(Long usuarioId) {
         List<Carrinho> itens = carrinhoRepository.findByUsuarioId(usuarioId.intValue());
         carrinhoRepository.deleteAll(itens);
-    }
-
-    public double calcularTotal(Long usuarioId) {
-        return carrinhoRepository.findByUsuarioId(usuarioId.intValue())
-                .stream()
-                .mapToDouble(item -> item.getProduto().getPreco().doubleValue())
-                .sum();
     }
 }

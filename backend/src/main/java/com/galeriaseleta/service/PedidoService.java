@@ -1,12 +1,13 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.dto.request.CriarPedidoRequest;
+import com.galeriaseleta.dto.response.PedidoResponse;
 import com.galeriaseleta.model.*;
 import com.galeriaseleta.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class PedidoService {
@@ -35,35 +36,32 @@ public class PedidoService {
         this.opcaoFreteRepository = opcaoFreteRepository;
     }
 
-    public List<Pedido> listar(String status) {
-        if (status != null && !status.isBlank()) {
-            return pedidoRepository.findByStatus(status);
-        }
-        return pedidoRepository.findAll();
+    public List<PedidoResponse> listar(String status) {
+        List<Pedido> pedidos = (status != null && !status.isBlank())
+                ? pedidoRepository.findByStatus(status)
+                : pedidoRepository.findAll();
+
+        return pedidos.stream()
+                .map(pedido -> PedidoResponse.from(
+                        pedido,
+                        itemPedidoRepository.findByPedidoId(pedido.getId())))
+                .toList();
     }
 
-    public Pedido buscarPorId(Long id) {
-        return pedidoRepository.findById(id.intValue())
+    public PedidoResponse buscarPorId(Long id) {
+        Pedido pedido = pedidoRepository.findById(id.intValue())
                 .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + id));
+        List<ItemPedido> itens = itemPedidoRepository.findByPedidoId(pedido.getId());
+        return PedidoResponse.from(pedido, itens);
     }
 
-    /**
-     * Cria um pedido a partir do checkout.
-     * Espera no body: usuarioId, enderecoId, produtoIds (lista), freteId (opcional), codigoCupom (opcional).
-     */
-    public Pedido criar(Map<String, Object> dados) {
-        Integer usuarioId = ((Number) dados.get("usuarioId")).intValue();
-        Integer enderecoId = ((Number) dados.get("enderecoId")).intValue();
+    public PedidoResponse criar(CriarPedidoRequest request) {
+        Usuario usuario = usuarioRepository.findById(request.getUsuarioId().intValue())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + request.getUsuarioId()));
+        Endereco endereco = enderecoRepository.findById(request.getEnderecoId().intValue())
+                .orElseThrow(() -> new RuntimeException("Endereço não encontrado: " + request.getEnderecoId()));
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + usuarioId));
-        Endereco endereco = enderecoRepository.findById(enderecoId)
-                .orElseThrow(() -> new RuntimeException("Endereço não encontrado: " + enderecoId));
-
-        @SuppressWarnings("unchecked")
-        List<Integer> produtoIds = (List<Integer>) dados.get("produtoIds");
-
-        List<Produto> produtos = produtoIds.stream()
+        List<Produto> produtos = request.getProdutoIds().stream()
                 .map(pid -> produtoRepository.findById(pid)
                         .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + pid)))
                 .toList();
@@ -74,22 +72,19 @@ public class PedidoService {
 
         BigDecimal valorFrete = BigDecimal.ZERO;
         OpcaoFrete frete = null;
-        if (dados.containsKey("freteId") && dados.get("freteId") != null) {
-            Integer freteId = ((Number) dados.get("freteId")).intValue();
-            frete = opcaoFreteRepository.findById(freteId).orElse(null);
+        if (request.getFreteId() != null) {
+            frete = opcaoFreteRepository.findById(request.getFreteId()).orElse(null);
             if (frete != null) valorFrete = frete.getPreco();
         }
 
         BigDecimal desconto = BigDecimal.ZERO;
         Cupom cupom = null;
-        if (dados.containsKey("codigoCupom") && dados.get("codigoCupom") != null) {
-            cupom = cupomRepository.findByCodigo((String) dados.get("codigoCupom")).orElse(null);
+        if (request.getCodigoCupom() != null) {
+            cupom = cupomRepository.findByCodigo(request.getCodigoCupom()).orElse(null);
             if (cupom != null && Boolean.TRUE.equals(cupom.getAtivo())) {
                 desconto = calcularDesconto(subtotal, cupom);
             }
         }
-
-        BigDecimal total = subtotal.add(valorFrete).subtract(desconto);
 
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
@@ -99,30 +94,32 @@ public class PedidoService {
         pedido.setSubtotal(subtotal);
         pedido.setValorFrete(valorFrete);
         pedido.setDesconto(desconto);
-        pedido.setTotal(total);
+        pedido.setTotal(subtotal.add(valorFrete).subtract(desconto));
         pedido.setStatus("pendente");
 
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        for (Produto produto : produtos) {
+        List<ItemPedido> itensSalvos = produtos.stream().map(produto -> {
             ItemPedido item = new ItemPedido();
             item.setPedido(pedidoSalvo);
             item.setProduto(produto);
             item.setPrecoPago(produto.getPreco());
-            itemPedidoRepository.save(item);
-        }
+            return itemPedidoRepository.save(item);
+        }).toList();
 
-        return pedidoSalvo;
+        return PedidoResponse.from(pedidoSalvo, itensSalvos);
     }
 
     public void cancelar(Long id) {
-        Pedido pedido = buscarPorId(id);
+        Pedido pedido = pedidoRepository.findById(id.intValue())
+                .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + id));
         pedido.setStatus("cancelado");
         pedidoRepository.save(pedido);
     }
 
     public void atualizarStatus(Long id, String status) {
-        Pedido pedido = buscarPorId(id);
+        Pedido pedido = pedidoRepository.findById(id.intValue())
+                .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + id));
         pedido.setStatus(status);
         pedidoRepository.save(pedido);
     }

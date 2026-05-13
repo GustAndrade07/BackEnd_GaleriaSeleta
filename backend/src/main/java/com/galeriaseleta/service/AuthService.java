@@ -1,11 +1,10 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.dto.request.AuthRegisterRequest;
 import com.galeriaseleta.model.Usuario;
 import com.galeriaseleta.repository.UsuarioRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class AuthService {
@@ -28,21 +27,16 @@ public class AuthService {
         return usuario;
     }
 
-    public Usuario registrar(Map<String, Object> dados) {
-        String email = (String) dados.get("email");
-
-        if (usuarioRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("E-mail já cadastrado: " + email);
+    public Usuario registrar(AuthRegisterRequest request) {
+        if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("E-mail já cadastrado: " + request.getEmail());
         }
 
         Usuario usuario = new Usuario();
-        usuario.setNome((String) dados.get("nome"));
-        usuario.setEmail(email);
-        usuario.setSenha(passwordEncoder.encode((String) dados.get("senha")));
-
-        if (dados.containsKey("telefone")) {
-            usuario.setTelefone((String) dados.get("telefone"));
-        }
+        usuario.setNome(request.getNome());
+        usuario.setEmail(request.getEmail());
+        usuario.setSenha(passwordEncoder.encode(request.getSenha()));
+        usuario.setTelefone(request.getTelefone());
 
         return usuarioRepository.save(usuario);
     }

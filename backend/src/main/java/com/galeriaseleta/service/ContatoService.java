@@ -1,5 +1,7 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.dto.request.ContatoRequest;
+import com.galeriaseleta.dto.request.NewsletterRequest;
 import com.galeriaseleta.model.Contato;
 import com.galeriaseleta.model.Newsletter;
 import com.galeriaseleta.repository.ContatoRepository;
@@ -7,7 +9,6 @@ import com.galeriaseleta.repository.NewsletterRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ContatoService {
@@ -20,13 +21,13 @@ public class ContatoService {
         this.newsletterRepository = newsletterRepository;
     }
 
-    public void enviarMensagem(Map<String, Object> dados) {
+    public void enviarMensagem(ContatoRequest request) {
         Contato contato = new Contato();
-        contato.setNome((String) dados.get("nome"));
-        contato.setSobrenome((String) dados.get("sobrenome"));
-        contato.setEmail((String) dados.get("email"));
-        contato.setTelefone((String) dados.get("telefone"));
-        contato.setMensagem((String) dados.get("mensagem"));
+        contato.setNome(request.getNome());
+        contato.setSobrenome(request.getSobrenome());
+        contato.setEmail(request.getEmail());
+        contato.setTelefone(request.getTelefone());
+        contato.setMensagem(request.getMensagem());
         contatoRepository.save(contato);
     }
 
@@ -38,16 +39,15 @@ public class ContatoService {
         contatoRepository.deleteById(id.intValue());
     }
 
-    public void inscreverNewsletter(Map<String, Object> dados) {
-        String email = (String) dados.get("email");
-        newsletterRepository.findByEmail(email).ifPresentOrElse(
+    public void inscreverNewsletter(NewsletterRequest request) {
+        newsletterRepository.findByEmail(request.getEmail()).ifPresentOrElse(
                 inscricao -> {
                     inscricao.setAtivo(true);
                     newsletterRepository.save(inscricao);
                 },
                 () -> {
                     Newsletter inscricao = new Newsletter();
-                    inscricao.setEmail(email);
+                    inscricao.setEmail(request.getEmail());
                     newsletterRepository.save(inscricao);
                 }
         );

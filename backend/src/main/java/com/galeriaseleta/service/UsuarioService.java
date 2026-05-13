@@ -1,5 +1,8 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.dto.request.AlterarSenhaRequest;
+import com.galeriaseleta.dto.request.AtualizarPerfilRequest;
+import com.galeriaseleta.dto.request.EnderecoRequest;
 import com.galeriaseleta.model.Endereco;
 import com.galeriaseleta.model.Usuario;
 import com.galeriaseleta.repository.EnderecoRepository;
@@ -8,7 +11,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class UsuarioService {
@@ -22,35 +24,6 @@ public class UsuarioService {
         this.enderecoRepository = enderecoRepository;
     }
 
-    public Usuario cadastrar(Map<String, Object> dados) {
-        String email = (String) dados.get("email");
-        if (usuarioRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("E-mail já cadastrado: " + email);
-        }
-
-        Usuario usuario = new Usuario();
-        usuario.setNome((String) dados.get("nome"));
-        usuario.setEmail(email);
-        usuario.setSenha(passwordEncoder.encode((String) dados.get("senha")));
-
-        if (dados.containsKey("telefone")) {
-            usuario.setTelefone((String) dados.get("telefone"));
-        }
-
-        return usuarioRepository.save(usuario);
-    }
-
-    public Usuario login(String email, String senha) {
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        if (!passwordEncoder.matches(senha, usuario.getSenha())) {
-            throw new RuntimeException("Senha incorreta");
-        }
-
-        return usuario;
-    }
-
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id.intValue())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + id));
@@ -61,17 +34,24 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + email));
     }
 
-    public Usuario atualizar(Long id, Map<String, Object> dados) {
+    public Usuario atualizar(Long id, AtualizarPerfilRequest request) {
         Usuario usuario = buscarPorId(id);
 
-        if (dados.containsKey("nome")) usuario.setNome((String) dados.get("nome"));
-        if (dados.containsKey("telefone")) usuario.setTelefone((String) dados.get("telefone"));
-
-        if (dados.containsKey("senha") && dados.get("senha") != null) {
-            usuario.setSenha(passwordEncoder.encode((String) dados.get("senha")));
-        }
+        if (request.getNome() != null) usuario.setNome(request.getNome());
+        if (request.getTelefone() != null) usuario.setTelefone(request.getTelefone());
 
         return usuarioRepository.save(usuario);
+    }
+
+    public void alterarSenha(Long id, AlterarSenhaRequest request) {
+        Usuario usuario = buscarPorId(id);
+
+        if (!passwordEncoder.matches(request.getSenhaAtual(), usuario.getSenha())) {
+            throw new RuntimeException("Senha atual incorreta");
+        }
+
+        usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
+        usuarioRepository.save(usuario);
     }
 
     public void deletar(Long id) {
@@ -82,18 +62,18 @@ public class UsuarioService {
         return enderecoRepository.findByUsuarioId(usuarioId.intValue());
     }
 
-    public Endereco adicionarEndereco(Long usuarioId, Map<String, Object> dados) {
+    public Endereco adicionarEndereco(Long usuarioId, EnderecoRequest request) {
         Usuario usuario = buscarPorId(usuarioId);
 
         Endereco endereco = new Endereco();
         endereco.setUsuario(usuario);
-        endereco.setRua((String) dados.get("rua"));
-        endereco.setCidade((String) dados.get("cidade"));
-        endereco.setEstado((String) dados.get("estado"));
-        endereco.setCep((String) dados.get("cep"));
+        endereco.setRua(request.getRua());
+        endereco.setCidade(request.getCidade());
+        endereco.setEstado(request.getEstado());
+        endereco.setCep(request.getCep());
 
-        if (dados.containsKey("principal")) {
-            endereco.setPrincipal((Boolean) dados.get("principal"));
+        if (request.getPrincipal() != null) {
+            endereco.setPrincipal(request.getPrincipal());
         }
 
         return enderecoRepository.save(endereco);

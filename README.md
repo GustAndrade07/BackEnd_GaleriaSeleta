@@ -69,6 +69,9 @@ BackEnd_GaleriaSeleta/
 │   │   ├── config/                 # CORS e tratamento global de erros
 │   │   ├── controller/             # Endpoints REST
 │   │   ├── converter/              # Conversor LocalDateTime para SQLite
+│   │   ├── dto/                    # Data Transfer Objects
+│   │   │   ├── request/            # DTOs de entrada (dados recebidos da API)
+│   │   │   └── response/           # DTOs de saída (dados retornados pela API)
 │   │   ├── model/                  # Entidades JPA
 │   │   ├── repository/             # Repositórios Spring Data JPA
 │   │   └── service/                # Regras de negócio

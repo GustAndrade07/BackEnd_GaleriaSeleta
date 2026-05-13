@@ -1,11 +1,14 @@
 package com.galeriaseleta.controller;
 
+import com.galeriaseleta.dto.request.AtualizarStatusRequest;
+import com.galeriaseleta.dto.request.ProdutoRequest;
+import com.galeriaseleta.dto.response.ProdutoResponse;
 import com.galeriaseleta.service.ProdutoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/produtos")
@@ -19,61 +22,73 @@ public class ProdutoController {
 
     /** Lista produtos com filtros opcionais. Roteia para o método de serviço adequado com base nos parâmetros. */
     @GetMapping
-    public ResponseEntity<Object> listarProdutos(
+    public ResponseEntity<List<ProdutoResponse>> listarProdutos(
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false, defaultValue = "padrao") String ordenacao,
             @RequestParam(required = false, defaultValue = "ativo") String status) {
+
+        List<ProdutoResponse> resultado;
+
         if (categoriaId != null) {
-            return ResponseEntity.ok(produtoService.buscarPorCategoria(categoriaId));
+            resultado = produtoService.buscarPorCategoria(categoriaId).stream()
+                    .map(ProdutoResponse::from).toList();
+        } else {
+            resultado = switch (ordenacao) {
+                case "menor-preco" -> produtoService.listarPorMenorPreco().stream().map(ProdutoResponse::from).toList();
+                case "maior-preco" -> produtoService.listarPorMaiorPreco().stream().map(ProdutoResponse::from).toList();
+                case "novidades"   -> produtoService.listarNovidades().stream().map(ProdutoResponse::from).toList();
+                default -> "todos".equals(status)
+                        ? produtoService.listarTodos().stream().map(ProdutoResponse::from).toList()
+                        : produtoService.listarAtivos().stream().map(ProdutoResponse::from).toList();
+            };
         }
-        return switch (ordenacao) {
-            case "menor-preco" -> ResponseEntity.ok(produtoService.listarPorMenorPreco());
-            case "maior-preco" -> ResponseEntity.ok(produtoService.listarPorMaiorPreco());
-            case "novidades"   -> ResponseEntity.ok(produtoService.listarNovidades());
-            default -> "todos".equals(status)
-                    ? ResponseEntity.ok(produtoService.listarTodos())
-                    : ResponseEntity.ok(produtoService.listarAtivos());
-        };
+
+        return ResponseEntity.ok(resultado);
     }
 
-    /** Retorna os 8 produtos ativos mais recentes para o marquee da home. */
+    /** Retorna os produtos marcados como novidade para o marquee da home. */
     @GetMapping("/novidades")
-    public ResponseEntity<Object> listarNovidades() {
-        return ResponseEntity.ok(produtoService.listarNovidades());
+    public ResponseEntity<List<ProdutoResponse>> listarNovidades() {
+        return ResponseEntity.ok(produtoService.listarNovidades().stream()
+                .map(ProdutoResponse::from).toList());
     }
 
     /** Busca produtos cujo nome contenha o termo informado. */
     @GetMapping("/busca")
-    public ResponseEntity<Object> buscar(@RequestParam String termo) {
-        return ResponseEntity.ok(produtoService.buscarPorNome(termo));
+    public ResponseEntity<List<ProdutoResponse>> buscar(@RequestParam String termo) {
+        return ResponseEntity.ok(produtoService.buscarPorNome(termo).stream()
+                .map(ProdutoResponse::from).toList());
     }
 
     /** Retorna os detalhes de um produto pelo ID. */
     @GetMapping("/{id}")
-    public ResponseEntity<Object> buscarProduto(@PathVariable Long id) {
-        return ResponseEntity.ok(produtoService.buscarPorId(id));
+    public ResponseEntity<ProdutoResponse> buscarProduto(@PathVariable Long id) {
+        return ResponseEntity.ok(ProdutoResponse.from(produtoService.buscarPorId(id)));
     }
 
     /** Cadastra um novo produto. */
     @PostMapping
-    public ResponseEntity<Object> criarProduto(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(produtoService.salvar(body));
+    public ResponseEntity<ProdutoResponse> criarProduto(@RequestBody ProdutoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ProdutoResponse.from(produtoService.salvar(request)));
     }
 
     /** Atualiza os dados de um produto existente. */
     @PutMapping("/{id}")
-    public ResponseEntity<Object> atualizarProduto(
+    public ResponseEntity<ProdutoResponse> atualizarProduto(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> body) {
-        return ResponseEntity.ok(produtoService.atualizar(id, body));
+            @RequestBody ProdutoRequest request) {
+        return ResponseEntity.ok(ProdutoResponse.from(produtoService.atualizar(id, request)));
     }
 
     /** Altera o status de visibilidade de um produto (ativo/inativo). */
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> atualizarStatusProduto(
             @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
-        produtoService.atualizar(id, new java.util.HashMap<>(body));
+            @RequestBody AtualizarStatusRequest request) {
+        ProdutoRequest statusRequest = new ProdutoRequest();
+        statusRequest.setStatus(request.getStatus());
+        produtoService.atualizar(id, statusRequest);
         return ResponseEntity.ok().build();
     }
 
