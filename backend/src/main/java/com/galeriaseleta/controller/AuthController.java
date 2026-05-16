@@ -17,7 +17,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    /** Autentica o usuário com e-mail e senha. */
+    /** Autentica o usuário e retorna o JWT. Body: { email, senha }. */
     @PostMapping("/login")
     public ResponseEntity<Object> login(@RequestBody Map<String, Object> body) {
         String email = (String) body.get("email");
@@ -25,7 +25,7 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(email, senha));
     }
 
-    /** Registra um novo usuário. */
+    /** Registra um novo usuário e retorna o JWT. */
     @PostMapping("/register")
     public ResponseEntity<Object> registrar(@RequestBody Map<String, Object> body) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(body));

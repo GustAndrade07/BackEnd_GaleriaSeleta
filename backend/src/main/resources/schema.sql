@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email      TEXT    NOT NULL UNIQUE,
   senha      TEXT    NOT NULL,
   telefone   TEXT,
+  role       TEXT    NOT NULL DEFAULT 'ROLE_USER',
   criado_em  TEXT    DEFAULT (datetime('now'))
 );
 

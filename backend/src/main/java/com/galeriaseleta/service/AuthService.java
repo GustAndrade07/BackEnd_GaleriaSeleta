@@ -1,8 +1,10 @@
 package com.galeriaseleta.service;
 
+import com.galeriaseleta.model.Role;
 import com.galeriaseleta.model.Usuario;
 import com.galeriaseleta.repository.UsuarioRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.galeriaseleta.security.JwtUtil;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -11,13 +13,18 @@ import java.util.Map;
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public AuthService(UsuarioRepository usuarioRepository) {
+    public AuthService(UsuarioRepository usuarioRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil) {
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder   = passwordEncoder;
+        this.jwtUtil           = jwtUtil;
     }
 
-    public Usuario login(String email, String senha) {
+    public Map<String, Object> login(String email, String senha) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
 
@@ -25,10 +32,11 @@ public class AuthService {
             throw new RuntimeException("Credenciais inválidas");
         }
 
-        return usuario;
+        String token = jwtUtil.generateToken(usuario.getEmail(), usuario.getRole().name());
+        return buildAuthResponse(token, usuario);
     }
 
-    public Usuario registrar(Map<String, Object> dados) {
+    public Map<String, Object> registrar(Map<String, Object> dados) {
         String email = (String) dados.get("email");
 
         if (usuarioRepository.findByEmail(email).isPresent()) {
@@ -44,24 +52,45 @@ public class AuthService {
             usuario.setTelefone((String) dados.get("telefone"));
         }
 
-        return usuarioRepository.save(usuario);
+        // Permite criar admin via campo "role" (uso interno / seed)
+        if ("ROLE_ADMIN".equals(dados.get("role"))) {
+            usuario.setRole(Role.ROLE_ADMIN);
+        }
+
+        usuarioRepository.save(usuario);
+
+        String token = jwtUtil.generateToken(usuario.getEmail(), usuario.getRole().name());
+        return buildAuthResponse(token, usuario);
     }
 
     public void logout() {
-        // Sessão gerenciada pelo cliente; sem estado no servidor por enquanto
+        // JWT é stateless; o cliente descarta o token
     }
 
     public Object refreshToken(String refreshToken) {
-        throw new UnsupportedOperationException("JWT não implementado ainda");
+        throw new UnsupportedOperationException("Refresh token não implementado");
     }
 
     public void esqueceuSenha(String email) {
         usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("E-mail não encontrado"));
-        // Envio de e-mail de recuperação será implementado com JWT
+        // Envio de e-mail de recuperação pendente
     }
 
     public void redefinirSenha(String token, String novaSenha) {
-        throw new UnsupportedOperationException("Redefinição de senha requer JWT");
+        throw new UnsupportedOperationException("Redefinição de senha pendente");
+    }
+
+    private Map<String, Object> buildAuthResponse(String token, Usuario usuario) {
+        return Map.of(
+                "token", token,
+                "tipo", "Bearer",
+                "usuario", Map.of(
+                        "id",    usuario.getId(),
+                        "nome",  usuario.getNome(),
+                        "email", usuario.getEmail(),
+                        "role",  usuario.getRole().name()
+                )
+        );
     }
 }
