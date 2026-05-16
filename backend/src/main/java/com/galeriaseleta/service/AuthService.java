@@ -1,13 +1,11 @@
 package com.galeriaseleta.service;
 
-import com.galeriaseleta.model.Role;
+import com.galeriaseleta.dto.request.AuthRegisterRequest;
 import com.galeriaseleta.model.Usuario;
 import com.galeriaseleta.repository.UsuarioRepository;
 import com.galeriaseleta.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class AuthService {
@@ -24,7 +22,7 @@ public class AuthService {
         this.jwtUtil           = jwtUtil;
     }
 
-    public Map<String, Object> login(String email, String senha) {
+    public Usuario login(String email, String senha) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
 
@@ -32,35 +30,25 @@ public class AuthService {
             throw new RuntimeException("Credenciais inválidas");
         }
 
-        String token = jwtUtil.generateToken(usuario.getEmail(), usuario.getRole().name());
-        return buildAuthResponse(token, usuario);
+        return usuario;
     }
 
-    public Map<String, Object> registrar(Map<String, Object> dados) {
-        String email = (String) dados.get("email");
-
-        if (usuarioRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("E-mail já cadastrado: " + email);
+    public Usuario registrar(AuthRegisterRequest request) {
+        if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("E-mail já cadastrado: " + request.getEmail());
         }
 
         Usuario usuario = new Usuario();
-        usuario.setNome((String) dados.get("nome"));
-        usuario.setEmail(email);
-        usuario.setSenha(passwordEncoder.encode((String) dados.get("senha")));
+        usuario.setNome(request.getNome());
+        usuario.setEmail(request.getEmail());
+        usuario.setSenha(passwordEncoder.encode(request.getSenha()));
+        usuario.setTelefone(request.getTelefone());
 
-        if (dados.containsKey("telefone")) {
-            usuario.setTelefone((String) dados.get("telefone"));
-        }
+        return usuarioRepository.save(usuario);
+    }
 
-        // Permite criar admin via campo "role" (uso interno / seed)
-        if ("ROLE_ADMIN".equals(dados.get("role"))) {
-            usuario.setRole(Role.ROLE_ADMIN);
-        }
-
-        usuarioRepository.save(usuario);
-
-        String token = jwtUtil.generateToken(usuario.getEmail(), usuario.getRole().name());
-        return buildAuthResponse(token, usuario);
+    public String generateToken(Usuario usuario) {
+        return jwtUtil.generateToken(usuario.getEmail(), usuario.getRole().name());
     }
 
     public void logout() {
@@ -79,18 +67,5 @@ public class AuthService {
 
     public void redefinirSenha(String token, String novaSenha) {
         throw new UnsupportedOperationException("Redefinição de senha pendente");
-    }
-
-    private Map<String, Object> buildAuthResponse(String token, Usuario usuario) {
-        return Map.of(
-                "token", token,
-                "tipo", "Bearer",
-                "usuario", Map.of(
-                        "id",    usuario.getId(),
-                        "nome",  usuario.getNome(),
-                        "email", usuario.getEmail(),
-                        "role",  usuario.getRole().name()
-                )
-        );
     }
 }
