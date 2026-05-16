@@ -3,7 +3,7 @@
 Aplicação web full-stack para a **Galeria Seleta**, um brechó online com curadoria de peças vintage e exclusivas.
 
 - **Frontend:** Angular 19 com SSR (Server-Side Rendering)
-- **Backend:** Java 17 + Spring Boot 3 + SQLite
+- **Backend:** Java 17 + Spring Boot 3 + Spring Security + JWT + SQLite
 
 ---
 
@@ -66,7 +66,7 @@ Acesse `http://localhost:4200/` no navegador.
 BackEnd_GaleriaSeleta/
 ├── backend/                        # API REST em Spring Boot
 │   ├── src/main/java/com/galeriaseleta/
-│   │   ├── config/                 # CORS e tratamento global de erros
+│   │   ├── config/                 # CORS, Spring Security e tratamento global de erros
 │   │   ├── controller/             # Endpoints REST
 │   │   ├── converter/              # Conversor LocalDateTime para SQLite
 │   │   ├── dto/                    # Data Transfer Objects
@@ -74,6 +74,7 @@ BackEnd_GaleriaSeleta/
 │   │   │   └── response/           # DTOs de saída (dados retornados pela API)
 │   │   ├── model/                  # Entidades JPA
 │   │   ├── repository/             # Repositórios Spring Data JPA
+│   │   ├── security/               # JWT: filtro, utilitário e UserDetailsService
 │   │   └── service/                # Regras de negócio
 │   ├── src/main/resources/
 │   │   ├── application.properties  # Configuração do banco e servidor
@@ -98,70 +99,90 @@ BackEnd_GaleriaSeleta/
 Base URL: `http://localhost:8080/api`
 
 ### Autenticação
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/auth/register` | Cadastrar usuário |
-| POST | `/auth/login` | Login |
-| POST | `/auth/logout` | Logout |
-| POST | `/auth/forgot-password` | Recuperação de senha |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| POST | `/auth/register` | Cadastrar usuário — retorna JWT | Público |
+| POST | `/auth/login` | Login — retorna JWT | Público |
+| POST | `/auth/logout` | Logout (client-side) | Público |
+| POST | `/auth/forgot-password` | Recuperação de senha | Público |
+| POST | `/auth/refresh` | Renovar token | Público |
+
+**Resposta do login/register:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "tipo": "Bearer",
+  "usuario": {
+    "id": 1,
+    "nome": "João Silva",
+    "email": "joao@email.com",
+    "role": "ROLE_USER"
+  }
+}
+```
+
+Para acessar rotas protegidas, envie o token no header:
+```
+Authorization: Bearer <token>
+```
 
 ### Usuário
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/usuarios/me` | Ver perfil |
-| PUT | `/usuarios/me` | Atualizar perfil |
-| PATCH | `/usuarios/me/senha` | Alterar senha |
-| DELETE | `/usuarios/me` | Deletar conta |
-| GET | `/usuarios/me/enderecos` | Listar endereços |
-| POST | `/usuarios/me/enderecos` | Adicionar endereço |
-| DELETE | `/usuarios/me/enderecos/{id}` | Remover endereço |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| GET | `/usuarios/me` | Ver perfil | Autenticado |
+| PUT | `/usuarios/me` | Atualizar perfil | Autenticado |
+| PATCH | `/usuarios/me/senha` | Alterar senha | Autenticado |
+| DELETE | `/usuarios/me` | Deletar conta | Autenticado |
+| GET | `/usuarios/me/enderecos` | Listar endereços | Autenticado |
+| POST | `/usuarios/me/enderecos` | Adicionar endereço | Autenticado |
+| DELETE | `/usuarios/me/enderecos/{id}` | Remover endereço | Autenticado |
 
 ### Produtos
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/produtos` | Listar produtos (filtros: `ordenacao`, `status`) |
-| GET | `/produtos/{id}` | Buscar por ID |
-| GET | `/produtos/novidades` | Listar novidades |
-| GET | `/produtos/busca?termo=` | Buscar por nome |
-| POST | `/produtos` | Criar produto |
-| PUT | `/produtos/{id}` | Atualizar produto |
-| PATCH | `/produtos/{id}/status` | Alterar status |
-| DELETE | `/produtos/{id}` | Deletar produto |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| GET | `/produtos` | Listar produtos (filtros: `ordenacao`, `status`) | Público |
+| GET | `/produtos/{id}` | Buscar por ID | Público |
+| GET | `/produtos/novidades` | Listar novidades | Público |
+| GET | `/produtos/busca?termo=` | Buscar por nome | Público |
+| POST | `/produtos` | Criar produto | Admin |
+| PUT | `/produtos/{id}` | Atualizar produto | Admin |
+| PATCH | `/produtos/{id}/status` | Alterar status | Admin |
+| DELETE | `/produtos/{id}` | Deletar produto | Admin |
 
 ### Categorias
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/categorias` | Listar categorias |
-| GET | `/categorias/{id}` | Buscar por ID |
-| GET | `/categorias/{id}/produtos` | Produtos de uma categoria |
-| POST | `/categorias` | Criar categoria |
-| PUT | `/categorias/{id}` | Atualizar categoria |
-| DELETE | `/categorias/{id}` | Deletar categoria |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| GET | `/categorias` | Listar categorias | Público |
+| GET | `/categorias/{id}` | Buscar por ID | Público |
+| GET | `/categorias/{id}/produtos` | Produtos de uma categoria | Público |
+| POST | `/categorias` | Criar categoria | Admin |
+| PUT | `/categorias/{id}` | Atualizar categoria | Admin |
+| DELETE | `/categorias/{id}` | Deletar categoria | Admin |
 
 ### Carrinho
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/carrinho` | Ver carrinho |
-| POST | `/carrinho/itens` | Adicionar item |
-| PUT | `/carrinho/itens/{id}` | Atualizar quantidade |
-| DELETE | `/carrinho/itens/{id}` | Remover item |
-| DELETE | `/carrinho` | Limpar carrinho |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| GET | `/carrinho` | Ver carrinho | Autenticado |
+| POST | `/carrinho/itens` | Adicionar item | Autenticado |
+| PUT | `/carrinho/itens/{id}` | Atualizar quantidade | Autenticado |
+| DELETE | `/carrinho/itens/{id}` | Remover item | Autenticado |
+| DELETE | `/carrinho` | Limpar carrinho | Autenticado |
 
 ### Pedidos
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/pedidos` | Listar pedidos (filtro: `status`) |
-| GET | `/pedidos/{id}` | Buscar por ID |
-| POST | `/pedidos` | Criar pedido (checkout) |
-| PATCH | `/pedidos/{id}/cancelar` | Cancelar pedido |
-| PATCH | `/pedidos/{id}/status` | Atualizar status (admin) |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| GET | `/pedidos` | Listar pedidos (filtro: `status`) | Autenticado |
+| GET | `/pedidos/{id}` | Buscar por ID | Autenticado |
+| POST | `/pedidos` | Criar pedido (checkout) | Autenticado |
+| PATCH | `/pedidos/{id}/cancelar` | Cancelar pedido | Autenticado |
+| PATCH | `/pedidos/{id}/status` | Atualizar status | Admin |
 
 ### Contato e Newsletter
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/contato` | Enviar mensagem de contato |
-| POST | `/newsletter/inscrever` | Inscrever e-mail |
-| DELETE | `/newsletter/cancelar?email=` | Cancelar inscrição |
+| Método | Rota | Descrição | Acesso |
+|---|---|---|---|
+| POST | `/contato` | Enviar mensagem de contato | Público |
+| POST | `/newsletter/inscrever` | Inscrever e-mail | Público |
+| DELETE | `/newsletter/cancelar?email=` | Cancelar inscrição | Público |
 
 ---
 
@@ -186,7 +207,7 @@ O banco SQLite é criado automaticamente em `backend/galeria_seleta.db` na prime
 
 | Tabela | Descrição |
 |---|---|
-| `usuarios` | Contas de usuário |
+| `usuarios` | Contas de usuário (campo `role`: `ROLE_USER` ou `ROLE_ADMIN`) |
 | `categorias` | Categorias de produtos (suporta hierarquia) |
 | `produtos` | Catálogo de peças |
 | `fotos_produto` | Imagens dos produtos |
@@ -208,9 +229,23 @@ O arquivo [`teste.http`](teste.http) contém 56 requisições cobrindo todos os 
 
 ---
 
+## Segurança
+
+Autenticação via **JWT (JSON Web Token)** com Spring Security 6. O token expira em 24 horas.
+
+| Role | Descrição |
+|---|---|
+| `ROLE_USER` | Usuário comum. Atribuído automaticamente no cadastro. |
+| `ROLE_ADMIN` | Administrador. Acesso total ao gerenciamento do catálogo. |
+
+---
+
 ## Pendente
 
-- Autenticação JWT
+- Refresh token
+- Recuperação e redefinição de senha (envio de e-mail)
+- Blacklist de tokens no logout
+- Endpoint dedicado para criação de administrador
 - Integração frontend ↔ API
 - Painel administrativo
 - Processamento de pagamento
